@@ -1,9 +1,18 @@
 import React from 'react';
+import { startScrappingInDB } from '../server/db/crawler';
 
 function CrawlerForm() {
     const scrapeOnSubmit = (e) => {
         e.preventDefault();
-        if (e.target[0].value < 1 || e.target[1].value < 1) return;
+        if (e.target[1].value < 1 || e.target[2].value < 1) return;
+
+        startScrappingInDB(e.target[0].value, e.target[1].value, e.target[2].value)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
     }
 
     return (
