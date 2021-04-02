@@ -1,10 +1,10 @@
 import './styles/styles.scss';
-import CrawlerForm from './components/CrawlerForm';
+import HomePage from './components/HomePage';
 
 function App() {
   return (
     <div className="App">
-      <CrawlerForm />
+      <HomePage />
     </div>
   );
 }
