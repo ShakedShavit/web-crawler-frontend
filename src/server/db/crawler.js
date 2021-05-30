@@ -2,61 +2,39 @@ import Axios from 'axios';
 
 const URL = 'http://localhost:5000/';
 
-let getCrawlData;
-
-export const startScrappingInDB = async (startUrl, maxDepth, maxPages, setTreeQueue) => {
-    const treeQueue = [];
+export const startCrawlingInDB = async (queueName, rootUrl, maxDepth = null, maxPages = null) => {
     try {
-        getCrawlData = setInterval(() => {
-            setCrawlDataInterval(treeQueue, setTreeQueue)
-        }, 1000);
-
-        const res = await Axios.post(URL + 'start-scraping', {
-            startUrl,
+        await Axios.post(URL + 'start-scraping', {
+            queueName,
+            rootUrl,
             maxDepth,
             maxPages
         });
+    } catch (err) {
+        console.log(err);
+        if (!err.response) throw new Error('cannot access server');
+        throw new Error(err.response.data.message);
+    }
+}
 
-        clearInterval(getCrawlData);
-        console.log('Search Complete');
-
+export const getCrawlTreeFromDB = async (queueName) => {
+    try {
+        const res = await Axios.get(URL + 'get-tree', {
+            // transformResponse: [],
+            params: { queueName }
+        });
         return res.data;
     } catch (err) {
-        clearInterval(getCrawlData);
-
         console.log(err);
         throw new Error(err.response.data.message);
     }
-};
-
-let isAsyncIntervalFuncRunning = false;
-const setCrawlDataInterval = (treeQueue, setTreeQueue) => {
-    if (isAsyncIntervalFuncRunning) return;
-    isAsyncIntervalFuncRunning = true;
-
-    Axios.get(URL + 'get-unfetched-sites', {})
-        .then((res) => {
-            if (res.data.length > 0) {
-                treeQueue.push(...res.data);
-                setTreeQueue([...treeQueue]);
-            }
-            console.log(res);
-
-            isAsyncIntervalFuncRunning = false;
-        })
-        .catch((err) => {
-            isAsyncIntervalFuncRunning = false;
-            console.log(err);
-        });
 }
 
-export const deleteQueueInDB = async () => {
-    clearInterval(getCrawlData);
-
+export const deleteQueueInDB = async (queueName) => {
     try {
-        const res = await Axios.delete(URL + 'delete-queue', {});
-        console.log(res.data);
+        await Axios.delete(URL + 'delete-queue', { params: { queueName } });
     } catch (err) {
-        throw new Error(err.message);
+        console.log(err);
+        throw new Error(err.response.data.message);
     }
 }

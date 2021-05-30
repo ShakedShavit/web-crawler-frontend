@@ -1,72 +1,98 @@
-import React, { useEffect, useState } from 'react';
-import * as deepcopy from 'deepcopy';
+import React, { useEffect, useReducer, useState } from 'react';
 import CrawlerForm from './CrawlerForm';
-import TreeElement from './TreeElement';
-import { deleteQueueInDB } from '../server/db/crawler';
+import { getCrawlTreeFromDB, deleteQueueInDB } from '../server/db/crawler';
+import ReactJsonPrint from 'react-json-print'
+import treeReducer, { initialTreeState } from '../reducers/searchTreeReducer';
+import { updateTreeAction } from '../actions/searchTreeActions';
 
 function HomePage() {
-    const [treeQueue, setTreeQueue] = useState([]);
-    const [queueIndex, setQueueIndex] = useState(0);
-    const [crawlTree, setCrawlTree] = useState([]);
-    const [errorMessage, setErrorMessage] = useState([]);
+    const [treeState, dispatchTreeState] = useReducer(treeReducer, initialTreeState);
+
+    const [queueName, setQueueName] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [isCrawling, setIsCrawling] = useState(false);
+    const [showForm, setShowForm] = useState(true);
 
-    useEffect(() => {
-        let i = queueIndex;
-        let treeCopy = deepcopy(crawlTree);
-        for (; i < treeQueue.length; i++) {
-            if (treeQueue[i].level === 1) {
-                treeCopy.push({ ...treeQueue[i], children: [] });
-            } else {
-                treeCopy.forEach(site => {
-                    recursiveSearch(site, treeQueue[i]);
-                });
+    let isDeletingQueue = false;
+    console.log(treeState)
+
+    const getTreeInterval = async () => {
+        while (isCrawling && !!queueName && !isDeletingQueue) {
+            try {
+                let crawlInfo = await getCrawlTreeFromDB(queueName);
+                setErrorMessage('');
+
+                if (!!crawlInfo) {
+                    dispatchTreeState(updateTreeAction(
+                        crawlInfo?.tree?.length > 0 ? crawlInfo.tree : '{}'
+                    ));
+                }
+
+                if (crawlInfo?.isCrawlingDone === "true") {
+                    setIsCrawling(false);
+                    setQueueName('');
+                    break;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (err) {
+                console.log(err);
+                setErrorMessage(err.message);
+                setIsCrawling(false);
+                setQueueName('');
+                break;
             }
         }
-        setCrawlTree(treeCopy);
-        setQueueIndex(i);
-    }, [treeQueue.length]);
-
-    // Problem probably in this function (the treeQueue is fine)
-    const recursiveSearch = (siteNode, child) => {
-        console.log(siteNode);
-        if (siteNode.level === child.level - 1) {
-            if (siteNode.url === child.parentUrl) {
-                siteNode.children.push({ ...child, children: [] });
-            }
-            return;
-        }
-        siteNode.children.forEach(site => {
-            recursiveSearch(site, child);
-        });
     }
 
+    useEffect(() => {
+        if (!isCrawling || !queueName) return;
+        const fetchData = async () => {
+            await getTreeInterval();
+        }
+        fetchData();
+    }, [isCrawling, queueName]);
+
     const stopCrawling = () => {
-        deleteQueueInDB()
+        isDeletingQueue = true;
+        deleteQueueInDB(queueName)
             .then((res) => {
+                isDeletingQueue = false;
+
                 setIsCrawling(false);
+                setQueueName('');
             })
             .catch((err) => {
+                isDeletingQueue = false;
+
                 setIsCrawling(false);
+                setQueueName('');
                 console.log(err);
+                setErrorMessage(err.message);
             });
     }
 
+    const changeFormShow = () => {
+        setShowForm(!showForm);
+    }
 
     return (
         <div>
             <button onClick={stopCrawling} disabled={!isCrawling}>Stop Process</button>
-            <CrawlerForm setTreeQueue={setTreeQueue} setErrorMessage={setErrorMessage} setCrawlTree={setCrawlTree} setQueueIndex={setQueueIndex} isCrawling={isCrawling} setIsCrawling={setIsCrawling} />
+            <div className="show-form-button" onClick={changeFormShow}>{ showForm ? "-" : "+" }</div>
+            { showForm &&
+            <CrawlerForm
+                errorMessage={errorMessage}
+                setErrorMessage={setErrorMessage}
+                isCrawling={isCrawling}
+                setIsCrawling={setIsCrawling}
+                setQueueName={setQueueName}
+            /> }
             <br></br>
             <div>{errorMessage}</div>
             <br></br>
-            {
-                crawlTree.map((site) => {
-                    return (
-                        <TreeElement key={site.url} site={site} />
-                    )
-                })
-            }
+            { isCrawling && <div>Crawling in process...</div> }
+            { treeState !== '{}' && <div className="tree"><ReactJsonPrint dataString={ treeState } expanded={true} /></div> }
         </div>
     );
 }

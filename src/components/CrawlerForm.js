@@ -1,26 +1,32 @@
-import React, { useEffect } from 'react';
-import { startScrappingInDB } from '../server/db/crawler';
+import React from 'react';
+import { startCrawlingInDB } from '../server/db/crawler';
 
 function CrawlerForm(props) {
-    const restartCrawlVars = () => {
-        props.setErrorMessage('');
-        props.setCrawlTree([]);
-        props.setTreeQueue([]);
-        props.setQueueIndex(0);
-    }
-
     const scrapeOnSubmit = (e) => {
         e.preventDefault();
-        restartCrawlVars();
 
-        if (e.target[1].value < 1) return;
+        props.setErrorMessage('');
 
-        props.setIsCrawling(true);
+        let queueName = e.target[0].value;
+        let rootUrl = e.target[1].value;
+        let maxDepth = e.target[2].value;
+        let maxPages = e.target[3].value;
 
-        startScrappingInDB(e.target[0].value, e.target[1].value, e.target[2].value, props.setTreeQueue)
+        let errMsg = '';
+        if (!queueName) errMsg = 'must include queue name';
+        else if (queueName.length > 80) errMsg = 'queue name cannot be longer than 80 characters';
+        else if (queueName.includes(' ')) errMsg = 'queue name cannot include spaces';
+        else if (!rootUrl) errMsg = 'must include a web page url';
+        else if (!maxDepth && !maxPages) errMsg = 'must include either max search levels or max search pages';
+        if (!!errMsg) {
+            props.setErrorMessage(errMsg);
+            return;
+        }
+
+        startCrawlingInDB(queueName, rootUrl, maxDepth, maxPages)
             .then((res) => {
-                console.log(res);
-                props.setIsCrawling(false);
+                props.setIsCrawling(true);
+                props.setQueueName(queueName);
             })
             .catch((err) => {
                 console.log(err);
@@ -31,14 +37,19 @@ function CrawlerForm(props) {
 
     return (
         <form onSubmit={scrapeOnSubmit}>
-            <label>Start Url:</label>
-            <input type="text" defaultValue="http://hex2rgba.devoth.com/" required></input>
-            <label>Max Search Levels:</label>
-            <input type="number" min="1" defaultValue="2" required></input>
-            <label>Max Pages:</label>
-            <input type="number" min="1" defaultValue="10"></input>
+            <label>Search Name:</label>
+            <input type="text" defaultValue="my-crawl" required></input>
 
-            <button type="submit" disabled={props.isCrawling}>Scrape</button>
+            <label>Root Url:</label>
+            <input type="text" defaultValue="http://hex2rgba.devoth.com" required></input>
+
+            <label>Max Search Levels:</label>
+            <input type="number" min="1" defaultValue="5"></input>
+
+            <label>Max Search Pages:</label>
+            <input type="number" min="1" defaultValue="300"></input>
+            
+            <button type="submit" disabled={props.isCrawling}>Crawl</button>
         </form>
     );
 }
