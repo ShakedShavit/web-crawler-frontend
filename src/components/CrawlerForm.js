@@ -14,7 +14,8 @@ function CrawlerForm(props) {
 
         let errMsg = '';
         if (!queueName) errMsg = 'must include queue name';
-        else if (queueName.length > 80) errMsg = 'queue name cannot be longer than 80 characters';
+        else if (queueName.length > 75) errMsg = 'queue name cannot be longer than 80 characters';
+        else if (/\d/.test(queueName)) errMsg = 'queue name cannot contain numbers';
         else if (queueName.includes(' ')) errMsg = 'queue name cannot include spaces';
         else if (!rootUrl) errMsg = 'must include a web page url';
         else if (!maxDepth && !maxPages) errMsg = 'must include either max search levels or max search pages';

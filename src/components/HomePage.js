@@ -14,7 +14,7 @@ function HomePage() {
     const [showForm, setShowForm] = useState(true);
 
     let isDeletingQueue = false;
-    console.log(treeState)
+    console.log(treeState);
 
     const getTreeInterval = async () => {
         while (isCrawling && !!queueName && !isDeletingQueue) {
@@ -28,7 +28,7 @@ function HomePage() {
                     ));
                 }
 
-                if (crawlInfo?.isCrawlingDone === "true") {
+                if (crawlInfo?.isCrawlingDone) {
                     setIsCrawling(false);
                     setQueueName('');
                     break;
@@ -57,18 +57,16 @@ function HomePage() {
         isDeletingQueue = true;
         deleteQueueInDB(queueName)
             .then((res) => {
-                isDeletingQueue = false;
-
                 setIsCrawling(false);
                 setQueueName('');
+                isDeletingQueue = false;
             })
             .catch((err) => {
-                isDeletingQueue = false;
-
                 setIsCrawling(false);
                 setQueueName('');
                 console.log(err);
                 setErrorMessage(err.message);
+                isDeletingQueue = false;
             });
     }
 
