@@ -1,4 +1,4 @@
-import actionTypes from "../actions/searchTreeActions";
+import { actionTypes } from "../actions/searchTreeActions";
 
 export const initialTreeState = "{}";
 
