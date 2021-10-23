@@ -2,11 +2,13 @@
     box-sizing: border-box;
     font-size: 0.9rem;
     margin: 0;
-    font-family: 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family: "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial,
+        sans-serif;
     letter-spacing: 0.5px;
 }
 
 body {
     margin: 0;
     background-color: #616161;
+    padding: 10px;
 }

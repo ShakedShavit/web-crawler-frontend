@@ -58,6 +58,17 @@ button:hover:not([disabled]) {
     padding: 15px;
 }
 
+.err-msg {
+    background: rgb(190, 190, 190);
+    padding: 10px;
+    color: red;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 15px;
+    text-align: center;
+}
+
 @media (max-width: 768px) {
     form {
         display: flex;

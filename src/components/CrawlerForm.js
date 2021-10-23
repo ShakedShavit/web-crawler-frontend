@@ -1,32 +1,33 @@
-import React from 'react';
-import { startCrawlingInDB } from '../server/db/crawler';
+import React from "react";
+import { startCrawlingInDB } from "../server/db/crawler";
 
 function CrawlerForm(props) {
     const scrapeOnSubmit = (e) => {
         e.preventDefault();
-
-        props.setErrorMessage('');
 
         let queueName = e.target[0].value;
         let rootUrl = e.target[1].value;
         let maxDepth = e.target[2].value;
         let maxPages = e.target[3].value;
 
-        let errMsg = '';
-        if (!queueName) errMsg = 'must include queue name';
-        else if (queueName.length > 75) errMsg = 'queue name cannot be longer than 80 characters';
-        else if (/\d/.test(queueName)) errMsg = 'queue name cannot contain numbers';
-        else if (queueName.includes(' ')) errMsg = 'queue name cannot include spaces';
-        else if (!rootUrl) errMsg = 'must include a web page url';
-        else if (!maxDepth && !maxPages) errMsg = 'must include either max search levels or max search pages';
+        let errMsg = "";
+        if (!queueName) errMsg = "must include queue name";
+        else if (queueName.length > 75) errMsg = "queue name cannot be longer than 80 characters";
+        else if (/\d/.test(queueName)) errMsg = "queue name cannot contain numbers";
+        else if (queueName.includes(" ")) errMsg = "queue name cannot include spaces";
+        else if (!rootUrl) errMsg = "must include a web page url";
+        else if (!maxDepth && !maxPages)
+            errMsg = "must include either max search levels or max search pages";
         if (!!errMsg) {
             props.setErrorMessage(errMsg);
             return;
         }
 
+        props.setErrorMessage("");
+
+        props.setIsCrawling(true);
         startCrawlingInDB(queueName, rootUrl, maxDepth, maxPages)
             .then((res) => {
-                props.setIsCrawling(true);
                 props.setQueueName(queueName);
             })
             .catch((err) => {
@@ -34,7 +35,7 @@ function CrawlerForm(props) {
                 props.setErrorMessage(err.message);
                 props.setIsCrawling(false);
             });
-    }
+    };
 
     return (
         <form onSubmit={scrapeOnSubmit}>
@@ -49,8 +50,10 @@ function CrawlerForm(props) {
 
             <label>Max Search Pages:</label>
             <input type="number" min="1" defaultValue="300"></input>
-            
-            <button type="submit" disabled={props.isCrawling}>Crawl</button>
+
+            <button type="submit" disabled={props.isCrawling}>
+                Crawl
+            </button>
         </form>
     );
 }
